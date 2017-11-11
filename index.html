@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Firefox 57 Burndown - Public</title>
+        <link href="https://code.cdn.mozilla.net/fonts/zilla-slab.css" rel="stylesheet"> 
+        <link href="https://code.cdn.mozilla.net/fonts/fira.css" rel="stylesheet">
+        <style>
+            h1 {
+                margin-top: 0;
+                line-height: 120%;
+                font-family: 'Zilla Slab Highlight', serif;
+                font-weight: bold;
+            }
+
+            h2 {
+                font-family: 'Zilla Slab', serif;
+                font-weight: 600;
+            }
+
+            canvas {
+                position:absolute;
+                width: 100%;
+                height: 100%;
+                top: 0px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Mozilla</h1>
+        <h2>Firefox 57 Burndown</h2>
+
+        <div class="chart-container" style="position: relative; height:20vh; width:90vw">
+            <canvas id="chart"></canvas>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+        <script>
+            var chartData = {
+                toTriage: [],
+                affecting: [],
+                dates: [],
+                newBugs:[],
+                upliftRequested: [],
+                uplifted: []
+            };
+
+            const dataURL = 'https://spreadsheets.google.com/feeds/list/1k98lDyxm2g2vYMbvrCSnJ46ZTqE9FvRWLwIF-cGlmt0/1/public/full?alt=json';
+
+            const process = function(data) {
+                data.feed.entry.slice(3).forEach(row => {
+                    chartData.affecting.push(parseInt(row['gsx$p1saffectingormayaffect']['$t'],10));
+                    chartData.toTriage.push(parseInt(row['gsx$bugsawaitingadecison']['$t'],10));
+                    chartData.dates.push(row['gsx$category']['$t']);
+                    chartData.newBugs.push(row['gsx$newbugsthisday']['$t']);
+                    chartData.upliftRequested.push(parseInt(row['gsx$upliftrequested']['$t'])),
+                    chartData.uplifted.push(parseInt(row['gsx$uplifted']['$t'],10));
+                });
+
+                cyclePlots(data);
+            }
+
+            // cycle between charts
+
+            const cyclePlots = function(data) {
+                runLinePlot(data);
+            }
+
+            const runLinePlot = function(data) {
+                plotLine(data);
+                setTimeout(runBarPlot, 15000, data);
+            }
+
+            const runBarPlot = function(data) {
+                plotBar(data);
+                setTimeout(runLinePlot, 15000, data);
+            }
+
+            const plotLine = function(data) {
+                var ctx = document.getElementById('chart').getContext('2d');
+                var chart = new Chart(ctx, {
+                    // The type of chart we want to create
+                    type: 'line',
+
+                    // The data for our dataset
+                    data: {
+                        labels: chartData.dates,
+                        datasets: [ {
+                            label: "Uplifited",
+                            borderColor: 'rgb(0, 255, 0)',
+                            data: chartData.uplifted,
+                            fill: false,
+                            lineTension: 0
+                        }, {
+                            label: "Awaiting a Decision",
+                            borderColor: 'rgb(0, 128, 0)',
+                            data: chartData.toTriage,
+                            fill: false,
+                            lineTension: 0
+                        }, {
+                            label: "Affecting or May Affect",
+                            borderColor: 'rgb(255, 128, 0)',
+                            data: chartData.affecting,
+                            fill: false,
+                            lineTension: 0
+                        }
+                        ]
+                    },
+                    // Configuration options go here
+                    options: {
+                    }
+                });
+            }        
+
+            const plotBar = function(data) {
+                var ctx = document.getElementById('chart').getContext('2d');
+                var chart = new Chart(ctx, {
+                    // The type of chart we want to create
+                    type: 'bar',
+
+                    // The data for our dataset
+                    data: {
+                        labels: chartData.dates,
+                        datasets: [ {    
+                            label: "Uplift Requested",
+                            backgroundColor: 'rgb(255, 0, 255)',
+                            borderColor: 'rgb(255, 0, 255)',
+                            data: chartData.upliftRequested
+                        }, {
+                            label: "New Bugs",
+                            backgroundColor: 'rgb(255, 99, 132)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            data: chartData.newBugs
+                        }
+                        ]
+                    }
+                });
+            }
+
+            // set globals for charts
+            Chart.defaults.line.spanGaps = false;
+            Chart.defaults.global.defaultFontFamily = "'Fira Sans', sans-serif";
+
+            // fetch data
+            fetch(dataURL)
+                .then(response => {
+                    if (response.ok) {
+                        response.json()
+                        .then(data => {
+                            process(data);
+                        })
+                    }
+                });
+        </script>
+    </body>
+</html>
