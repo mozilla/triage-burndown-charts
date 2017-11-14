@@ -30,7 +30,7 @@
     </head>
     <body>
         <h1>Mozilla</h1>
-        <h2>Firefox 57 Burndown</h2>
+        <h2>Firefox <span class="version">XX</span> Burndown</h2>
 
         <div class="chart-container" style="position: relative; height:20vh; width:90vw">
             <canvas id="chart"></canvas>
@@ -38,6 +38,9 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
         <script>
+            const version = 58;
+            const sheetKey = '1hIJlFRTH2gQU2J8mmiF3MfEJK23w8Kwpunvh4DEgXvQ'; // Google Sheet Id
+
             var chartData = {
                 toTriage: [],
                 affecting: [],
@@ -47,15 +50,13 @@
                 uplifted: []
             };
 
-            const dataURL = 'https://spreadsheets.google.com/feeds/list/1k98lDyxm2g2vYMbvrCSnJ46ZTqE9FvRWLwIF-cGlmt0/1/public/full?alt=json';
-
             const process = function(data) {
                 data.feed.entry.slice(3).forEach(row => {
                     chartData.affecting.push(parseInt(row['gsx$p1saffectingormayaffect']['$t'],10));
                     chartData.toTriage.push(parseInt(row['gsx$bugsawaitingadecison']['$t'],10));
                     chartData.dates.push(row['gsx$category']['$t']);
-                    chartData.newBugs.push(row['gsx$newbugsthisday']['$t']);
-                    chartData.upliftRequested.push(parseInt(row['gsx$upliftrequested']['$t'])),
+                    chartData.newBugs.push(parseInt(row['gsx$newbugsthisday']['$t'],10));
+                    chartData.upliftRequested.push(parseInt(row['gsx$upliftrequested']['$t'],10));
                     chartData.uplifted.push(parseInt(row['gsx$uplifted']['$t'],10));
                 });
 
@@ -65,20 +66,20 @@
             // cycle between charts
 
             const cyclePlots = function(data) {
-                runLinePlot(data);
+                runFirstPlot(data);
             }
 
-            const runLinePlot = function(data) {
-                plotLine(data);
-                setTimeout(runBarPlot, 15000, data);
+            const runFirstPlot = function(data) {
+                plotOne(data);
+                setTimeout(runSecondPlot, 15000, data);
             }
 
-            const runBarPlot = function(data) {
-                plotBar(data);
-                setTimeout(runLinePlot, 15000, data);
+            const runSecondPlot = function(data) {
+                plotTwo(data);
+                setTimeout(runFirstPlot, 15000, data);
             }
 
-            const plotLine = function(data) {
+            const plotOne = function(data) {
                 var ctx = document.getElementById('chart').getContext('2d');
                 var chart = new Chart(ctx, {
                     // The type of chart we want to create
@@ -107,37 +108,42 @@
                             lineTension: 0
                         }
                         ]
-                    },
-                    // Configuration options go here
-                    options: {
                     }
                 });
             }        
 
-            const plotBar = function(data) {
+            const plotTwo = function(data) {
                 var ctx = document.getElementById('chart').getContext('2d');
                 var chart = new Chart(ctx, {
                     // The type of chart we want to create
-                    type: 'bar',
+                    type: 'line',
 
                     // The data for our dataset
                     data: {
                         labels: chartData.dates,
                         datasets: [ {    
                             label: "Uplift Requested",
-                            backgroundColor: 'rgb(255, 0, 255)',
                             borderColor: 'rgb(255, 0, 255)',
-                            data: chartData.upliftRequested
+                            data: chartData.upliftRequested,
+                            fill: false,
+                            lineTension: 0
                         }, {
                             label: "New Bugs",
-                            backgroundColor: 'rgb(255, 99, 132)',
                             borderColor: 'rgb(255, 99, 132)',
-                            data: chartData.newBugs
+                            data: chartData.newBugs,
+                            fill: false,
+                            lineTension: 0
                         }
                         ]
                     }
                 });
             }
+
+            var dataURL = [
+                    'https://spreadsheets.google.com/feeds/list/',
+                    sheetKey,
+                    '/1/public/full?alt=json'
+                ].join('');
 
             // set globals for charts
             Chart.defaults.line.spanGaps = false;
@@ -153,6 +159,9 @@
                         })
                     }
                 });
+
+            // update version
+            document.querySelector('.version').innerHTML = version;
         </script>
     </body>
 </html>
