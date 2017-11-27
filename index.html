@@ -5,25 +5,45 @@
         <meta http-equiv="X-UA-Compatible" content="IE=Edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Firefox 57 Burndown - Public</title>
-        <link href="https://code.cdn.mozilla.net/fonts/zilla-slab.css" rel="stylesheet"> 
+        <link href="https://code.cdn.mozilla.net/fonts/zilla-slab.css" rel="stylesheet">
         <link href="https://code.cdn.mozilla.net/fonts/fira.css" rel="stylesheet">
         <style>
+            * {
+              box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                padding: 2vw;
+                height: 100vh;
+                width: 100vw;
+                display: grid;
+                grid-template-rows: auto 1fr;
+                grid-template-columns: auto 1fr;
+                grid-gap: 1vw;
+            }
             h1 {
-                margin-top: 0;
+                margin: 0;
                 line-height: 120%;
                 font-family: 'Zilla Slab Highlight', serif;
                 font-weight: bold;
             }
 
             h2 {
+                margin: 0;
                 font-family: 'Zilla Slab', serif;
                 font-weight: 600;
+                align-self: center;
+            }
+
+            .chart-container {
+                grid-column: 1 / span 2;
+                position: relative;
             }
 
             canvas {
-                position:absolute;
-                width: 100%;
-                height: 100%;
+                position: absolute;
+                width: 100px;
+                height: 100px;
                 top: 0px;
             }
         </style>
@@ -32,7 +52,7 @@
         <h1>Mozilla</h1>
         <h2>Firefox <span class="version">XX</span> Burndown</h2>
 
-        <div class="chart-container" style="position: relative; height:20vh; width:90vw">
+        <div class="chart-container">
             <canvas id="chart"></canvas>
         </div>
 
@@ -114,7 +134,7 @@
                         ]
                     }
                 });
-            }        
+            }
 
             const plotTwo = function(data) {
                 var ctx = document.getElementById('chart').getContext('2d');
@@ -125,7 +145,7 @@
                     // The data for our dataset
                     data: {
                         labels: chartData.dates,
-                        datasets: [ {    
+                        datasets: [ {
                             label: "Uplift Requested",
                             borderColor: 'rgb(255, 0, 255)',
                             backgroundColor: 'rgb(255, 0, 255)',
@@ -136,7 +156,7 @@
                             backgroundColor: 'rgb(255, 99, 132)',
                             data: chartData.newBugs
                         },
-                        {   
+                        {
                             label: "New Regressions",
                             borderColor: 'rgb(255, 128, 128)',
                             backgroundColor: 'rgb(255, 128, 128)',
@@ -163,16 +183,18 @@
             Chart.defaults.line.spanGaps = false;
             Chart.defaults.global.defaultFontFamily = "'Fira Sans', sans-serif";
 
-            // fetch data
-            fetch(dataURL)
-                .then(response => {
-                    if (response.ok) {
-                        response.json()
-                        .then(data => {
-                            process(data);
-                        })
-                    }
-                });
+            window.addEventListener('load', function () {
+                 // fetch data
+                fetch(dataURL)
+                  .then(response => {
+                      if (response.ok) {
+                          response.json()
+                          .then(data => {
+                              process(data);
+                          })
+                      }
+                  });
+            });
 
             // update version
             document.querySelector('.version').innerHTML = version;
